@@ -2,137 +2,421 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>JARVIS 2.0 Main</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1020">
+  <title>JARVIS | Personal Assistant</title>
   <style>
+    :root {
+      color-scheme: dark;
+      font-family: Inter, "Segoe UI", Arial, sans-serif;
+      background: #0b1020;
+      color: #f4f7ff;
+      font-synthesis: none;
+      text-rendering: optimizeLegibility;
+      --muted: #99a5bf;
+      --line: rgba(168, 185, 221, .14);
+      --cyan: #67e8f9;
+      --panel: rgba(18, 27, 49, .82);
+    }
+
+    * { box-sizing: border-box; }
+
     body {
-      background: linear-gradient(135deg, #0f2027, #2c5364, #1c92d2);
-      color: #00fff7;
-      font-family: 'Orbitron', Arial, sans-serif;
+      min-width: 320px;
+      min-height: 100vh;
       margin: 0;
-      height: 100vh;
-      overflow: hidden;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      background:
+        radial-gradient(ellipse at 16% 8%, rgba(43, 110, 177, .2), transparent 38rem),
+        radial-gradient(ellipse at 90% 88%, rgba(54, 77, 154, .18), transparent 34rem),
+        #0b1020;
     }
-    .container {
-      text-align: center;
-      margin-bottom: 40px;
-    }
-    h1 {
-      font-size: 2.5em;
-      letter-spacing: 0.15em;
-      text-shadow: 0 0 20px #00fff7, 0 0 40px #00fff7;
-      margin-bottom: 0.5em;
-      animation: neon 1.5s infinite alternate;
-    }
-    @keyframes neon {
-      from { text-shadow: 0 0 10px #00fff7, 0 0 20px #00fff7; }
-      to   { text-shadow: 0 0 40px #00fff7, 0 0 80px #00fff7; }
-    }
-    .subtitle {
-      font-size: 1.1em;
-      color: #fff;
-      opacity: 0.7;
-      margin-bottom: 2em;
-    }
-    #mic-visualizer {
-      display: block;
+
+    button { font: inherit; }
+
+    .page {
+      width: min(100% - 40px, 1050px);
       margin: 0 auto;
-      background: transparent;
+      padding: 32px 0 48px;
     }
-    #start-btn {
-      margin-top: 2em;
-      padding: 12px 32px;
-      font-size: 1.2em;
-      border: none;
-      border-radius: 30px;
-      background: #00fff7;
-      color: #222;
-      font-family: 'Orbitron', Arial, sans-serif;
+
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0 42px;
+    }
+
+    .brand, .status-pill, .section-heading, .button-content {
+      display: flex;
+      align-items: center;
+    }
+
+    .brand { gap: 12px; }
+
+    .brand-mark {
+      display: grid;
+      width: 40px;
+      height: 40px;
+      place-items: center;
+      border: 1px solid rgba(103, 232, 249, .34);
+      border-radius: 13px;
+      background: rgba(103, 232, 249, .09);
+      color: var(--cyan);
+      font-size: 20px;
+      font-weight: 700;
+    }
+
+    .brand-name { font-size: 15px; font-weight: 700; letter-spacing: .12em; }
+    .brand-caption { margin-top: 3px; color: var(--muted); font-size: 12px; }
+
+    .status-pill {
+      gap: 9px;
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(18, 27, 49, .62);
+      color: #c3cde0;
+      font-size: 12px;
+    }
+
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #74819b;
+      box-shadow: 0 0 10px rgba(116, 129, 155, .45);
+    }
+
+    .status-pill[data-state="active"] .status-dot {
+      background: #4ade80;
+      box-shadow: 0 0 12px rgba(74, 222, 128, .65);
+    }
+
+    .status-pill[data-state="error"] .status-dot { background: #fb7185; }
+
+    .intro { max-width: 650px; margin-bottom: 28px; }
+    .eyebrow { color: var(--cyan); font-size: 11px; font-weight: 700; letter-spacing: .18em; text-transform: uppercase; }
+    h1 { margin: 12px 0 10px; font-size: clamp(34px, 6vw, 54px); letter-spacing: -.045em; line-height: 1.08; }
+    .intro p { max-width: 560px; margin: 0; color: var(--muted); font-size: 15px; line-height: 1.7; }
+
+    .dashboard {
+      display: grid;
+      grid-template-columns: minmax(0, 1.55fr) minmax(250px, .85fr);
+      gap: 18px;
+    }
+
+    .card {
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      background: var(--panel);
+      box-shadow: 0 18px 60px rgba(0, 0, 0, .16);
+      backdrop-filter: blur(12px);
+    }
+
+    .control-card { padding: clamp(20px, 4vw, 32px); }
+
+    .section-heading { justify-content: space-between; gap: 12px; }
+    h2 { margin: 0; font-size: 16px; font-weight: 650; }
+    .small-label { color: var(--muted); font-size: 12px; }
+
+    .visualizer {
+      position: relative;
+      display: grid;
+      min-height: 220px;
+      margin: 22px 0;
+      place-items: center;
+      overflow: hidden;
+      border: 1px solid rgba(168, 185, 221, .1);
+      border-radius: 15px;
+      background:
+        linear-gradient(rgba(123, 151, 204, .035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(123, 151, 204, .035) 1px, transparent 1px),
+        rgba(8, 14, 29, .55);
+      background-size: 28px 28px;
+    }
+
+    #mic-visualizer { position: absolute; width: 100%; height: 100%; inset: 0; }
+
+    .mic-core {
+      z-index: 1;
+      display: grid;
+      width: 76px;
+      height: 76px;
+      place-items: center;
+      border: 1px solid rgba(103, 232, 249, .38);
+      border-radius: 50%;
+      background: rgba(21, 39, 62, .88);
+      box-shadow: 0 0 40px rgba(65, 205, 234, .12);
+      color: var(--cyan);
+      font-size: 27px;
+      pointer-events: none;
+    }
+
+    .visualizer-caption {
+      position: absolute;
+      z-index: 2;
+      right: 12px;
+      bottom: 12px;
+      left: 12px;
+      color: var(--muted);
+      font-size: 11px;
+      text-align: center;
+      pointer-events: none;
+    }
+
+    .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+    .button-content { justify-content: center; gap: 9px; }
+
+    .button {
+      min-height: 46px;
+      padding: 0 17px;
+      border: 1px solid transparent;
+      border-radius: 11px;
       cursor: pointer;
-      box-shadow: 0 0 20px #00fff7;
-      transition: background 0.2s;
+      font-size: 13px;
+      font-weight: 650;
+      transition: transform .15s ease, background .15s ease, border-color .15s ease;
     }
-    #start-btn:hover {
-      background: #1c92d2;
-      color: #fff;
+
+    .button:hover:not(:disabled) { transform: translateY(-1px); }
+    .button:focus-visible { outline: 2px solid var(--cyan); outline-offset: 3px; }
+    .button:disabled { cursor: wait; opacity: .65; }
+    .button-primary { background: var(--cyan); color: #07131b; }
+    .button-primary:hover:not(:disabled) { background: #a5f3fc; }
+    .button-secondary { border-color: var(--line); background: rgba(255, 255, 255, .035); color: #e2e9f7; }
+    .button-secondary:hover:not(:disabled) { background: rgba(255, 255, 255, .075); }
+
+    .message { min-height: 20px; margin: 13px 2px 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+    .message[data-state="error"] { color: #fda4af; }
+    .message[data-state="success"] { color: #86efac; }
+
+    .side-card { padding: 23px; }
+    .side-card h2 { margin-bottom: 18px; }
+    .steps { display: grid; gap: 18px; margin: 0; padding: 0; list-style: none; }
+    .step { display: grid; grid-template-columns: 30px 1fr; gap: 11px; align-items: start; }
+    .step-number {
+      display: grid;
+      width: 29px;
+      height: 29px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      color: var(--cyan);
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .step strong { display: block; margin: 1px 0 4px; font-size: 13px; }
+    .step span { display: block; color: var(--muted); font-size: 12px; line-height: 1.55; }
+    .note { margin: 21px 0 0; padding-top: 16px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; line-height: 1.6; }
+    footer { padding-top: 25px; color: #69758e; font-size: 11px; text-align: center; }
+
+    @media (max-width: 700px) {
+      .page { width: min(100% - 28px, 540px); padding-top: 20px; }
+      header { padding-bottom: 34px; }
+      .dashboard { grid-template-columns: 1fr; }
+      .visualizer { min-height: 190px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; }
     }
   </style>
-  <link href="https://fonts.googleapis.com/css?family=Orbitron:700" rel="stylesheet">
 </head>
 <body>
-  <div class="container">
-    <h1>JARVIS 2.0</h1>
-    <div class="subtitle">Say something to see the voice waves!</div>
-    <canvas id="mic-visualizer" width="400" height="200"></canvas>
-    <button id="start-btn">Start Listening</button>
-    <button onclick="fetch('/start_jarvis', {method:'POST'}).then(r=>r.json()).then(d=>alert(d.status));">Start JARVIS</button>
-  </div>
-  <script>
-    const canvas = document.getElementById('mic-visualizer');
-    const ctx = canvas.getContext('2d');
-    let audioContext, analyser, dataArray, source;
+  <main class="page">
+    <header>
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">J</div>
+        <div>
+          <div class="brand-name">JARVIS</div>
+          <div class="brand-caption">Personal assistant</div>
+        </div>
+      </div>
+      <div class="status-pill" id="assistant-status" data-state="idle" role="status" aria-live="polite">
+        <span class="status-dot" aria-hidden="true"></span>
+        <span id="assistant-status-text">Assistant offline</span>
+      </div>
+    </header>
 
-    function drawVisualizer() {
-      requestAnimationFrame(drawVisualizer);
-      if (!analyser) return;
-      analyser.getByteTimeDomainData(dataArray);
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      ctx.beginPath();
-      ctx.lineWidth = 4;
-      ctx.strokeStyle = "#00fff7";
-      let sliceWidth = canvas.width * 1.0 / dataArray.length;
-      let x = 0;
-      for(let i = 0; i < dataArray.length; i++) {
-        let v = dataArray[i] / 128.0;
-        let y = v * canvas.height/2;
-        if(i === 0) {
-          ctx.moveTo(x, y);
-        } else {
-          ctx.lineTo(x, y);
-        }
-        x += sliceWidth;
+    <section class="intro" aria-labelledby="page-title">
+      <div class="eyebrow">Your workspace</div>
+      <h1 id="page-title">How can I help?</h1>
+      <p>Start your voice assistant or preview your microphone input. Your assistant will ask for its voice password when it starts.</p>
+    </section>
+
+    <section class="dashboard" aria-label="Assistant controls">
+      <div class="card control-card">
+        <div class="section-heading">
+          <h2>Voice controls</h2>
+          <span class="small-label" id="visualizer-state">Visualizer off</span>
+        </div>
+        <div class="visualizer">
+          <canvas id="mic-visualizer" aria-label="Microphone audio visualization"></canvas>
+          <div class="mic-core" aria-hidden="true">MIC</div>
+          <div class="visualizer-caption" id="visualizer-caption">Microphone preview is off</div>
+        </div>
+        <div class="actions">
+          <button class="button button-primary" id="assistant-button" type="button">
+            <span class="button-content"><span aria-hidden="true">▶</span><span>Start JARVIS</span></span>
+          </button>
+          <button class="button button-secondary" id="visualizer-button" type="button">
+            <span class="button-content"><span aria-hidden="true">♫</span><span>Preview microphone</span></span>
+          </button>
+        </div>
+        <p class="message" id="assistant-message" role="status" aria-live="polite"></p>
+      </div>
+
+      <aside class="card side-card">
+        <h2>Get started</h2>
+        <ol class="steps">
+          <li class="step">
+            <span class="step-number">1</span>
+            <div><strong>Start the assistant</strong><span>JARVIS will begin listening in the app process.</span></div>
+          </li>
+          <li class="step">
+            <span class="step-number">2</span>
+            <div><strong>Say your password</strong><span>Speak “open jarvis” when prompted.</span></div>
+          </li>
+          <li class="step">
+            <span class="step-number">3</span>
+            <div><strong>Give a voice command</strong><span>Ask for the time, a search, a reminder, and more.</span></div>
+          </li>
+        </ol>
+        <p class="note">Microphone preview is optional and uses your browser microphone. Turn it off before starting JARVIS if both apps compete for microphone access.</p>
+      </aside>
+    </section>
+
+    <footer>JARVIS 2.0 · Local assistant dashboard</footer>
+  </main>
+
+  <script>
+    const canvas = document.getElementById("mic-visualizer");
+    const context = canvas.getContext("2d");
+    const visualizerButton = document.getElementById("visualizer-button");
+    const visualizerState = document.getElementById("visualizer-state");
+    const visualizerCaption = document.getElementById("visualizer-caption");
+    const assistantButton = document.getElementById("assistant-button");
+    const assistantMessage = document.getElementById("assistant-message");
+    const assistantStatus = document.getElementById("assistant-status");
+    const assistantStatusText = document.getElementById("assistant-status-text");
+    let audioContext;
+    let microphoneStream;
+    let analyser;
+    let animationFrame;
+
+    function resizeCanvas() {
+      const bounds = canvas.getBoundingClientRect();
+      const pixelRatio = window.devicePixelRatio || 1;
+      canvas.width = Math.round(bounds.width * pixelRatio);
+      canvas.height = Math.round(bounds.height * pixelRatio);
+      context.setTransform(pixelRatio, 0, 0, pixelRatio, 0, 0);
+      if (!analyser) {
+        context.clearRect(0, 0, bounds.width, bounds.height);
       }
-      ctx.lineTo(canvas.width, canvas.height/2);
-      ctx.stroke();
-      // Draw mic icon in the center
-      ctx.save();
-      ctx.globalAlpha = 0.8;
-      ctx.beginPath();
-      ctx.arc(canvas.width/2, canvas.height/2, 32, 0, 2 * Math.PI);
-      ctx.fillStyle = "#222";
-      ctx.fill();
-      ctx.strokeStyle = "#00fff7";
-      ctx.lineWidth = 3;
-      ctx.stroke();
-      ctx.font = "32px Arial";
-      ctx.fillStyle = "#00fff7";
-      ctx.textAlign = "center";
-      ctx.textBaseline = "middle";
-      ctx.fillText("🎤", canvas.width/2, canvas.height/2+2);
-      ctx.restore();
     }
 
-    document.getElementById('start-btn').onclick = async function() {
-      if (!navigator.mediaDevices) {
-        alert("Microphone access not supported in this browser.");
+    function drawVisualizer() {
+      if (!analyser) return;
+      const bounds = canvas.getBoundingClientRect();
+      const samples = new Uint8Array(analyser.fftSize);
+      analyser.getByteTimeDomainData(samples);
+      context.clearRect(0, 0, bounds.width, bounds.height);
+      context.beginPath();
+      context.lineWidth = 2;
+      context.strokeStyle = "#67e8f9";
+      context.shadowColor = "rgba(103, 232, 249, .65)";
+      context.shadowBlur = 12;
+      const step = bounds.width / samples.length;
+      for (let i = 0; i < samples.length; i += 1) {
+        const x = i * step;
+        const y = (samples[i] / 255) * bounds.height;
+        if (i === 0) context.moveTo(x, y);
+        else context.lineTo(x, y);
+      }
+      context.stroke();
+      context.shadowBlur = 0;
+      animationFrame = requestAnimationFrame(drawVisualizer);
+    }
+
+    function stopVisualizer() {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      if (microphoneStream) microphoneStream.getTracks().forEach((track) => track.stop());
+      if (audioContext && audioContext.state !== "closed") audioContext.close();
+      animationFrame = undefined;
+      microphoneStream = undefined;
+      audioContext = undefined;
+      analyser = undefined;
+      resizeCanvas();
+      visualizerButton.disabled = false;
+      visualizerButton.querySelector(".button-content span:last-child").textContent = "Preview microphone";
+      visualizerState.textContent = "Visualizer off";
+      visualizerCaption.textContent = "Microphone preview is off";
+    }
+
+    visualizerButton.addEventListener("click", async () => {
+      if (microphoneStream) {
+        stopVisualizer();
         return;
       }
-      this.disabled = true;
-      this.innerText = "Listening...";
-      audioContext = new (window.AudioContext || window.webkitAudioContext)();
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      source = audioContext.createMediaStreamSource(stream);
-      analyser = audioContext.createAnalyser();
-      analyser.fftSize = 256;
-      dataArray = new Uint8Array(analyser.fftSize);
-      source.connect(analyser);
-      drawVisualizer();
-    };
-    import webbrowser
-    webbrowser.open("c:/jarvis.py/3.py/main.html")
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        assistantMessage.textContent = "Microphone preview is not supported by this browser.";
+        assistantMessage.dataset.state = "error";
+        return;
+      }
+
+      visualizerButton.disabled = true;
+      assistantMessage.textContent = "";
+      assistantMessage.dataset.state = "";
+      try {
+        microphoneStream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        const source = audioContext.createMediaStreamSource(microphoneStream);
+        analyser = audioContext.createAnalyser();
+        analyser.fftSize = 512;
+        source.connect(analyser);
+        visualizerButton.querySelector(".button-content span:last-child").textContent = "Stop microphone preview";
+        visualizerState.textContent = "Microphone active";
+        visualizerCaption.textContent = "Live microphone input";
+        drawVisualizer();
+      } catch (error) {
+        stopVisualizer();
+        assistantMessage.textContent = error.name === "NotAllowedError"
+          ? "Microphone access was denied. Allow microphone access in your browser settings and try again."
+          : "Could not start the microphone preview. Check that a microphone is connected and try again.";
+        assistantMessage.dataset.state = "error";
+      } finally {
+        visualizerButton.disabled = false;
+      }
+    });
+
+    assistantButton.addEventListener("click", async () => {
+      if (microphoneStream) stopVisualizer();
+      assistantButton.disabled = true;
+      assistantMessage.textContent = "Starting JARVIS…";
+      assistantMessage.dataset.state = "";
+      assistantStatus.dataset.state = "idle";
+      assistantStatusText.textContent = "Starting assistant";
+
+      try {
+        const response = await fetch("/start_jarvis", { method: "POST" });
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "The server could not start JARVIS.");
+        assistantMessage.textContent = result.status || "JARVIS started. Follow the voice prompts in the app.";
+        assistantMessage.dataset.state = "success";
+        assistantStatus.dataset.state = "active";
+        assistantStatusText.textContent = "Assistant started";
+      } catch (error) {
+        assistantMessage.textContent = error.message || "Could not connect to JARVIS. Make sure the local server is running.";
+        assistantMessage.dataset.state = "error";
+        assistantStatus.dataset.state = "error";
+        assistantStatusText.textContent = "Could not start";
+        assistantButton.disabled = false;
+      }
+    });
+
+    window.addEventListener("resize", resizeCanvas);
+    window.addEventListener("beforeunload", stopVisualizer);
+    resizeCanvas();
   </script>
 </body>
 </html>
